@@ -1,0 +1,61 @@
+name: QA Automation
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 20 * * *"   # nightly full regression (03:00 WIB)
+
+jobs:
+  smoke:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - run: pip install -r requirements.txt && playwright install --with-deps chromium
+      - run: pytest -m smoke -n auto --reruns 1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-artifacts
+          path: |
+            allure-results
+            test-artifacts
+
+  regression:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - run: pip install -r requirements.txt && playwright install --with-deps ${{ matrix.browser }}
+      - run: pytest -n auto --browser ${{ matrix.browser }} --reruns 1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: regression-${{ matrix.browser }}
+          path: |
+            allure-results
+            test-artifacts
+
+  report:
+    needs: regression
+    if: always() && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { path: collected }
+      - uses: simple-elf/allure-report-action@v1.9
+        with:
+          allure_results: collected
+          allure_history: allure-history
+      - uses: actions/upload-artifact@v4
+        with: { name: allure-report, path: allure-report }
