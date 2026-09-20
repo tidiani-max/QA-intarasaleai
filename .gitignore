@@ -3,3 +3,4 @@ allure-report/
 test-artifacts/
 __pycache__/
 .venv/
+.DS_Store

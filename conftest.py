@@ -33,3 +33,8 @@ def logged_in_inventory(login_page):
     """Fixture-based setup: every test starts isolated, no shared state."""
     user, pwd = USERS["standard"]
     return login_page.login(user, pwd)
+
+
+@pytest.fixture(scope="session")
+def base_url(request):
+    return request.config.getoption("base_url") or os.getenv("BASE_URL", "https://www.saucedemo.com")
