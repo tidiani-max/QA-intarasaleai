@@ -1,11 +1,12 @@
 name: QA Automation
 
 on:
-  pull_request:
-  push:
-    branches: [main]
-  schedule:
-    - cron: "0 20 * * *"   # nightly full regression (03:00 WIB)
+    workflow_dispatch:
+    pull_request:
+    push:
+      branches: [main]
+    schedule:
+      - cron: "0 20 * * *"   # nightly full regression (03:00 WIB)
 
 jobs:
   smoke:
